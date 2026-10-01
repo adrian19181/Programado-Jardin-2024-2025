@@ -116,44 +116,67 @@ if wb is not None:
     html_condiciones = f"""<style>
 .excel-tbl-card {{
     background-color: #ffffff;
-    padding: 10px;
-    border-radius: 6px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    display: inline-block;
-    margin-bottom: 15px;
+    padding: 0px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    display: block;
+    margin-bottom: 25px;
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid #000000;
 }}
 .excel-tbl {{
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     font-family: Calibri, 'Segoe UI', Arial, sans-serif;
-    font-size: 13px;
+    font-size: 12px;
     color: #000000;
-    width: auto;
+    width: 100%;
+    margin: 0;
 }}
 .excel-tbl td {{
-    border: 1px solid #000000;
-    padding: 4px 8px;
+    position: relative;
+    z-index: 1;
+    border-right: 1px solid #000000;
+    border-bottom: 1px solid #000000;
+    padding: 6px 8px;
     vertical-align: middle;
 }}
 .lbl-yellow {{
-    background-color: #FFE600;
+    position: sticky !important;
+    left: 0 !important;
+    z-index: 20 !important;
+    background-color: #FFE600 !important;
     font-weight: bold;
-    text-align: right;
-    white-space: nowrap;
+    text-align: center;
+    white-space: normal !important;
+    word-wrap: break-word;
+    line-height: 1.2;
+    width: 125px;
+    min-width: 125px;
+    max-width: 125px;
+    font-size: 11px;
+    padding: 6px 4px !important;
+    background-clip: padding-box !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.15);
 }}
 .val-green {{
     background-color: #E2EFDA;
     text-align: center;
     font-weight: 600;
+    white-space: nowrap;
 }}
 .val-formula {{
     background-color: #D9E1F2;
     text-align: center;
     font-size: 12px;
+    white-space: nowrap;
 }}
 .val-tan {{
     background-color: #FFF2CC;
     text-align: center;
     font-weight: 600;
+    white-space: nowrap;
 }}
 </style>
 <div class="excel-tbl-card">
@@ -370,16 +393,16 @@ if wb is not None:
         is_dep_m = isinstance(dep_m, (int, float)) and float(dep_m) > 0
 
         if is_int_m:
-            bg_color = "#B4C6E7"  # Azul suave
+            row_class = "row-blue"
             tipo_cat = "🟦 Intereses Ganados"
         elif is_dep_p:
-            bg_color = "#FFFF00"  # Amarillo
+            row_class = "row-yellow"
             tipo_cat = "🟨 Aportes Personales"
         elif is_dep_m:
-            bg_color = "#FCE4D6"  # Naranja/Rosado
+            row_class = "row-pink"
             tipo_cat = "🟧 Aportes Mensuales"
         else:
-            bg_color = "#FFFFFF"
+            row_class = "row-white"
             tipo_cat = "Otros"
 
         movements.append({
@@ -390,7 +413,7 @@ if wb is not None:
             'int_diario': float(int_diario) if isinstance(int_diario, (int, float)) else 0.0,
             'inc_int_d': float(inc_int_d) if isinstance(inc_int_d, (int, float)) else 0.0,
             'int_m': float(int_m) if is_int_m else None,
-            'bg_color': bg_color,
+            'row_class': row_class,
             'tipo_cat': tipo_cat
         })
         r += 1
@@ -429,9 +452,11 @@ if wb is not None:
         inc_d_str = f"{m['inc_int_d']:.2f}".replace(".", ",") if m['inc_int_d'] > 0 else ""
         int_m_str = f"<b>{m['int_m']:,.2f}</b>".replace(".", "X").replace(",", ".").replace("X", ",") if m['int_m'] is not None else ""
 
+        rc = m['row_class']
+
         rows_html.append(
-            f'<tr style="background-color: {m["bg_color"]};">'
-            f'<td><b>{dt_str}</b></td>'
+            f'<tr class="{rc}">'
+            f'<td class="lbl-sticky-col"><b>{dt_str}</b></td>'
             f'<td>{dep_m_str}</td>'
             f'<td>{dep_p_str}</td>'
             f'<td style="font-weight: 600;">{saldo_str}</td>'
@@ -444,46 +469,109 @@ if wb is not None:
     tabla_movs_body = "".join(rows_html)
 
     html_movs_completo = f"""<style>
+/* Contenedor principal con scroll */
 .tbl-scroll-wrapper {{
     max-height: 480px;
-    max-width: 100%;
+    width: 100%;
     overflow-y: auto;
     overflow-x: auto;
     border: 1px solid #000000;
-    border-radius: 6px;
+    border-radius: 8px;
     background-color: #ffffff;
     box-shadow: 0 4px 12px rgba(0,0,0,0.2);
     margin-top: 10px;
     margin-bottom: 25px;
-    display: inline-block;
+    display: block;
+    position: relative; /* Contiene el contexto sticky */
 }}
+
+/* Configuracion estricta de la tabla */
 .tbl-sticky-movs {{
-    width: auto;
-    border-collapse: collapse;
+    width: 100%;
+    border-collapse: separate !important; /* Vital para sticky */
+    border-spacing: 0 !important;
     font-family: Calibri, 'Segoe UI', Arial, sans-serif;
     font-size: 12px;
     color: #000000;
+    margin: 0;
 }}
+
+/* ---------------------------------------------------
+   ENCABEZADOS (TH)
+--------------------------------------------------- */
 .tbl-sticky-movs th {{
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background-color: #1F2937;
-    color: #ffffff;
-    border: 1px solid #000000;
-    padding: 5px 6px;
-    text-align: center;
-    font-weight: bold;
-    line-height: 1.15;
-    white-space: nowrap;
-}}
-.tbl-sticky-movs td {{
-    border: 1px solid #000000;
-    padding: 4px 6px;
-    vertical-align: middle;
+    position: sticky !important;
+    top: 0 !important; /* Pegajoso verticalmente */
+    z-index: 20 !important; /* Capa superior a los datos */
+    background-color: #1F2937 !important;
+    color: #ffffff !important;
+    border-right: 1px solid #000000 !important;
+    border-bottom: 1px solid #000000 !important;
+    padding: 6px 8px !important;
     text-align: center !important;
-    white-space: nowrap;
+    font-weight: bold !important;
+    line-height: 1.15;
+    white-space: nowrap !important;
+    min-width: 90px;
 }}
+
+/* La esquina superior izquierda debe estar por encima de todo */
+.tbl-sticky-movs th:first-child {{
+    position: sticky !important;
+    top: 0 !important;
+    left: 0 !important;
+    z-index: 50 !important; /* Capa más alta */
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    box-shadow: 2px 0 5px rgba(0,0,0,0.2) !important;
+}}
+
+/* ---------------------------------------------------
+   CELDAS DE DATOS NORMALES (TD)
+--------------------------------------------------- */
+.tbl-sticky-movs td {{
+    /* ¡NO usar relative ni z-index aqui! */
+    border-right: 1px solid #000000 !important;
+    border-bottom: 1px solid #000000 !important;
+    padding: 6px 8px !important;
+    vertical-align: middle !important;
+    text-align: center !important;
+    white-space: nowrap !important;
+    min-width: 90px;
+}}
+
+/* ---------------------------------------------------
+   COLUMNA 1 (FECHAS) - FIJA A LA IZQUIERDA
+--------------------------------------------------- */
+.lbl-sticky-col {{
+    position: sticky !important;
+    left: 0 !important; /* Pegajoso horizontalmente */
+    z-index: 30 !important; /* Flota sobre las celdas de datos normales, por debajo del header */
+    font-weight: bold !important;
+    width: 125px !important;
+    min-width: 125px !important;
+    max-width: 125px !important;
+    box-shadow: 3px 0 6px rgba(0,0,0,0.3) !important;
+    background-clip: padding-box !important;
+}}
+
+/* ---------------------------------------------------
+   CLASES DE COLORES (Aplicadas al TR)
+   Forzamos el color de fondo para TD normales y el sticky
+--------------------------------------------------- */
+.row-blue td {{ background-color: #B4C6E7 !important; }}
+.row-blue .lbl-sticky-col {{ background-color: #B4C6E7 !important; }}
+
+.row-yellow td {{ background-color: #FFFF00 !important; }}
+.row-yellow .lbl-sticky-col {{ background-color: #FFFF00 !important; }}
+
+.row-pink td {{ background-color: #FCE4D6 !important; }}
+.row-pink .lbl-sticky-col {{ background-color: #FCE4D6 !important; }}
+
+.row-white td {{ background-color: #FFFFFF !important; }}
+.row-white .lbl-sticky-col {{ background-color: #FFFFFF !important; }}
+
 </style>
 <div class="tbl-scroll-wrapper">
 <table class="tbl-sticky-movs">

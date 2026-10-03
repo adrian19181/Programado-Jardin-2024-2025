@@ -790,14 +790,13 @@ if wb is not None:
     with tab_cum:
         if chart_saldos and chart_intereses:
             cum_int = np.cumsum(chart_intereses).tolist()
-            pct_roi = [(i / s) * 100 for i, s in zip(cum_int, chart_saldos)]
 
             max_cum = max(cum_int) if cum_int else 1.0
             pos_cum = ['outside' if v < max_cum * 0.35 else 'inside' for v in cum_int]
 
             labels_cum = [
-                f"${v:,.2f} ({p:.1f}%)".replace(".", "X").replace(",", ".").replace("X", ",")
-                for v, p in zip(cum_int, pct_roi)
+                f"${v:,.2f}".replace(".", "X").replace(",", ".").replace("X", ",")
+                for v in cum_int
             ]
 
             fig_cum = go.Figure()

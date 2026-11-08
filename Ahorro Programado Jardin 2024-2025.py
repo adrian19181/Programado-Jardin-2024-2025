@@ -299,6 +299,13 @@ if wb is not None:
     font-weight: bold;
     color: #000000;
 }
+.kpi-formula {
+    font-size: 10px;
+    font-weight: 600;
+    color: #4B5563;
+    margin-top: 4px;
+    line-height: 1.1;
+}
 </style>"""
 
     # --- KPI RESULTADOS ---
@@ -345,10 +352,12 @@ if wb is not None:
 <div class="kpi-card kpi-card-green">
 <div class="kpi-label">ROI Rentabilidad Acum.</div>
 <div class="kpi-value">{fmt_porcentaje(d7)}</div>
+<div class="kpi-formula">(Total Interés ÷ Total Depositado)</div>
 </div>
 <div class="kpi-card kpi-card-purple">
 <div class="kpi-label">Ratio de Ganancia</div>
 <div class="kpi-value">{fmt_porcentaje(ratio_ganancia_calc)}</div>
+<div class="kpi-formula">(Total Interés ÷ Total Ganado)</div>
 </div>
 <div class="kpi-card kpi-card-blue">
 <div class="kpi-label">Saldo Fin Mes Prom. Pond.</div>

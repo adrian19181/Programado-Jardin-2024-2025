@@ -400,12 +400,12 @@ if wb is not None:
 <div class="kpi-card kpi-card-blue">
 <div class="kpi-label">Retorno por cada $100 (ROI)</div>
 <div class="kpi-value">{retorno_100_val}</div>
-<div class="kpi-formula">solo dinero depositado</div>
+<div class="kpi-formula">Ganado por cada $100 de tu bolsillo</div>
 </div>
 <div class="kpi-card kpi-card-purple">
 <div class="kpi-label">Ganancia por $100 del Fondo (Ratio)</div>
 <div class="kpi-value">{ratio_100_val}</div>
-<div class="kpi-formula">Todo depositado e intereses</div>
+<div class="kpi-formula">Ganancia limpia por cada $100 rescatados</div>
 </div>
 <div class="kpi-card kpi-card-yellow">
 <div class="kpi-label">Productividad por $1.000</div>

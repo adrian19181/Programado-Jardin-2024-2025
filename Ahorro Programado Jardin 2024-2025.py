@@ -243,13 +243,44 @@ if wb is not None:
     d19 = sheet["D19"].value # Aportes Personales Promedio
     b19 = sheet["B19"].value # Interés Diario Promedio
 
-    # CÁLCULOS DE KPIS
+    # CÁLCULOS DE KPIS EXISTENTES
     tna_dec = tna_num if tna_num <= 1 else tna_num / 100.0
     tea_calc = ((1.0 + (tna_dec / 12.0)) ** 12.0) - 1.0
 
     d2_num = float(d2) if isinstance(d2, (int, float)) else 0.0
+    d5_num = float(d5) if isinstance(d5, (int, float)) else 0.0
     d6_num = float(d6) if isinstance(d6, (int, float)) else 0.0
     ratio_ganancia_calc = (d2_num / d6_num) if d6_num > 0 else 0.0
+
+    # CÁLCULO DE KPIS ADICIONALES (Puntos 2, 3 y 4)
+    # Punto 2: Interés sobre Interés (Ganancia por Interés Compuesto)
+    chart_intereses_kpi = []
+    r_kpi = 2
+    while True:
+        f_cobro_k = sheet.cell(row=r_kpi, column=29).value  # Col AC
+        int_m_k = sheet.cell(row=r_kpi, column=33).value     # Col AG
+        if f_cobro_k is None or str(f_cobro_k).strip() == "":
+            break
+        chart_intereses_kpi.append(float(int_m_k) if isinstance(int_m_k, (int, float)) else 0.0)
+        r_kpi += 1
+
+    interes_compuesto_calc = 0.0
+    cum_int_temp = 0.0
+    tna_mensual = tna_dec / 12.0
+    for int_m_val in chart_intereses_kpi:
+        interes_compuesto_calc += cum_int_temp * tna_mensual
+        cum_int_temp += int_m_val
+
+    # Punto 3: Porcentaje de Avance del Plan (Tiempo vs. Capital Meta)
+    total_dias_num = float(total_dias) if isinstance(total_dias, (int, float)) and float(total_dias) > 0 else 360.0
+    dias_real_num = float(dias_real) if isinstance(dias_real, (int, float)) else 0.0
+    pct_tiempo = (dias_real_num / total_dias_num) * 100.0 if total_dias_num > 0 else 0.0
+    pct_capital = (d5_num / d6_num * 100.0) if d6_num > 0 else 0.0
+
+    # Punto 4: Generación Diaria por cada $1.000 Depositados
+    b19_num = float(b19) if isinstance(b19, (int, float)) else 0.0
+    d16_num = float(d16) if isinstance(d16, (int, float)) else 0.0
+    prod_diaria_1000 = (b19_num / (d16_num / 1000.0)) if d16_num > 0 else (tna_dec / 360.0) * 1000.0
 
     css_kpis = """<style>
 .kpi-grid {
@@ -358,6 +389,21 @@ if wb is not None:
 <div class="kpi-label">Ratio de Ganancia</div>
 <div class="kpi-value">{fmt_porcentaje(ratio_ganancia_calc)}</div>
 <div class="kpi-formula">(Total Interés ÷ Total Ganado)<br>({fmt_moneda(d2)} ÷ {fmt_moneda(d6)})</div>
+</div>
+<div class="kpi-card kpi-card-green">
+<div class="kpi-label">Interés sobre Interés</div>
+<div class="kpi-value">{fmt_moneda(interes_compuesto_calc)}</div>
+<div class="kpi-formula">(Ganancia por Interés Compuesto acumulado)</div>
+</div>
+<div class="kpi-card kpi-card-blue">
+<div class="kpi-label">Avance del Plan</div>
+<div class="kpi-value">{pct_capital:.1f}%</div>
+<div class="kpi-formula">(Tiempo: {pct_tiempo:.1f}% | Capital Meta: {pct_capital:.1f}%)</div>
+</div>
+<div class="kpi-card kpi-card-yellow">
+<div class="kpi-label">Productividad por $1.000</div>
+<div class="kpi-value">{fmt_moneda(prod_diaria_1000)} / día</div>
+<div class="kpi-formula">(Interés Diario por cada $1.000 guardados)</div>
 </div>
 <div class="kpi-card kpi-card-blue">
 <div class="kpi-label">Saldo Fin Mes Prom. Pond.</div>

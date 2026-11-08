@@ -271,12 +271,15 @@ if wb is not None:
         interes_compuesto_calc += cum_int_temp * tna_mensual
         cum_int_temp += int_m_val
 
-    # 2. Retorno por cada $100
+    # 2. Retorno por cada $100 (ROI)
     d7_num = float(d7) if isinstance(d7, (int, float)) else (d2_num / d5_num if d5_num > 0 else 0.0)
     d7_pct = d7_num * 100.0 if d7_num <= 1.0 else d7_num
     retorno_100_val = f"${d7_pct:.2f}".replace(".", ",")
 
-    # 3. Productividad por cada $1.000 Depositados
+    # 3. Ganancia por $100 del Fondo (Ratio)
+    ratio_100_val = f"${ratio_ganancia_calc * 100.0:.2f}".replace(".", ",")
+
+    # 4. Productividad por cada $1.000 Depositados
     b19_num = float(b19) if isinstance(b19, (int, float)) else 0.0
     d16_num = float(d16) if isinstance(d16, (int, float)) else 0.0
     prod_diaria_1000 = (b19_num / (d16_num / 1000.0)) if d16_num > 0 else (tna_dec / 360.0) * 1000.0
@@ -395,9 +398,14 @@ if wb is not None:
 <div class="kpi-formula">(Ganancia por Interés Compuesto acumulado)</div>
 </div>
 <div class="kpi-card kpi-card-blue">
-<div class="kpi-label">Retorno por cada $100</div>
+<div class="kpi-label">Retorno por cada $100 (ROI)</div>
 <div class="kpi-value">{retorno_100_val}</div>
-<div class="kpi-formula">(Ganancia en dólares por cada $100 depositados)</div>
+<div class="kpi-formula">solo dinero depositado</div>
+</div>
+<div class="kpi-card kpi-card-purple">
+<div class="kpi-label">Ganancia por $100 del Fondo (Ratio)</div>
+<div class="kpi-value">{ratio_100_val}</div>
+<div class="kpi-formula">Todo depositado e intereses</div>
 </div>
 <div class="kpi-card kpi-card-yellow">
 <div class="kpi-label">Productividad por $1.000</div>

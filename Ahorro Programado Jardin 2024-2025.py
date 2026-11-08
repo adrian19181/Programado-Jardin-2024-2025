@@ -252,8 +252,8 @@ if wb is not None:
     d6_num = float(d6) if isinstance(d6, (int, float)) else 0.0
     ratio_ganancia_calc = (d2_num / d6_num) if d6_num > 0 else 0.0
 
-    # CÁLCULO DE KPIS ADICIONALES (Puntos 2, 3 y 4)
-    # Punto 2: Interés sobre Interés (Ganancia por Interés Compuesto)
+    # CÁLCULO DE KPIS ADICIONALES
+    # 1. Interés sobre Interés (Ganancia por Interés Compuesto)
     chart_intereses_kpi = []
     r_kpi = 2
     while True:
@@ -271,13 +271,12 @@ if wb is not None:
         interes_compuesto_calc += cum_int_temp * tna_mensual
         cum_int_temp += int_m_val
 
-    # Punto 3: Porcentaje de Avance del Plan (Tiempo vs. Capital Meta)
-    total_dias_num = float(total_dias) if isinstance(total_dias, (int, float)) and float(total_dias) > 0 else 360.0
-    dias_real_num = float(dias_real) if isinstance(dias_real, (int, float)) else 0.0
-    pct_tiempo = (dias_real_num / total_dias_num) * 100.0 if total_dias_num > 0 else 0.0
-    pct_capital = (d5_num / d6_num * 100.0) if d6_num > 0 else 0.0
+    # 2. Retorno por cada $100
+    d7_num = float(d7) if isinstance(d7, (int, float)) else (d2_num / d5_num if d5_num > 0 else 0.0)
+    d7_pct = d7_num * 100.0 if d7_num <= 1.0 else d7_num
+    retorno_100_val = f"${d7_pct:.2f}".replace(".", ",")
 
-    # Punto 4: Generación Diaria por cada $1.000 Depositados
+    # 3. Productividad por cada $1.000 Depositados
     b19_num = float(b19) if isinstance(b19, (int, float)) else 0.0
     d16_num = float(d16) if isinstance(d16, (int, float)) else 0.0
     prod_diaria_1000 = (b19_num / (d16_num / 1000.0)) if d16_num > 0 else (tna_dec / 360.0) * 1000.0
@@ -396,9 +395,9 @@ if wb is not None:
 <div class="kpi-formula">(Ganancia por Interés Compuesto acumulado)</div>
 </div>
 <div class="kpi-card kpi-card-blue">
-<div class="kpi-label">Avance del Plan</div>
-<div class="kpi-value">{pct_capital:.1f}%</div>
-<div class="kpi-formula">(Tiempo: {pct_tiempo:.1f}% | Capital Meta: {pct_capital:.1f}%)</div>
+<div class="kpi-label">Retorno por cada $100</div>
+<div class="kpi-value">{retorno_100_val}</div>
+<div class="kpi-formula">(Ganancia en dólares por cada $100 depositados)</div>
 </div>
 <div class="kpi-card kpi-card-yellow">
 <div class="kpi-label">Productividad por $1.000</div>

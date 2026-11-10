@@ -6,6 +6,10 @@ import pandas as pd
 import numpy as np
 import streamlit as st
 import plotly.graph_objects as go
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.platypus import HRFlowable, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 # ==============================================================================
 # AUTORUNNER: FUNCIONA TANTO LOCALMENTE COMO EN STREAMLIT CLOUD
@@ -71,19 +75,200 @@ def fmt_porcentaje(val):
         return str(val)
 
 # ==============================================================================
-# ENCABEZADO PRINCIPAL Y RECARGA
+# GENERACIÓN DE REPORTE PDF
 # ==============================================================================
-col_title, col_btn = st.columns([4, 1])
-with col_title:
-    st.title("💰 Ahorro Programado Jardín 2024-2025")
-    st.caption("Sincronizado en tiempo real desde Google Drive")
+def generar_pdf(condiciones, kpis_resultados, kpis_rendimientos, movements):
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer,
+        pagesize=letter,
+        rightMargin=36,
+        leftMargin=36,
+        topMargin=36,
+        bottomMargin=36,
+    )
+    styles = getSampleStyleSheet()
 
-with col_btn:
-    if st.button("🔄 Recargar", use_container_width=True):
-        st.cache_data.clear()
-        st.rerun()
+    title_style = ParagraphStyle(
+        "DocTitle",
+        parent=styles["Heading1"],
+        fontName="Helvetica-Bold",
+        fontSize=18,
+        leading=22,
+        textColor=colors.HexColor("#0F172A"),
+        alignment=1,
+        spaceAfter=10,
+    )
 
-st.divider()
+    h2_style = ParagraphStyle(
+        "SectionHeading",
+        parent=styles["Heading2"],
+        fontName="Helvetica-Bold",
+        fontSize=13,
+        leading=16,
+        textColor=colors.HexColor("#0F172A"),
+        spaceBefore=12,
+        spaceAfter=6,
+    )
+
+    cell_style = ParagraphStyle(
+        "CellText",
+        fontName="Helvetica",
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#000000"),
+        alignment=1,
+    )
+
+    cell_bold = ParagraphStyle(
+        "CellBold",
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+        textColor=colors.HexColor("#000000"),
+        alignment=1,
+    )
+
+    header_style = ParagraphStyle(
+        "HeaderStyle",
+        fontName="Helvetica-Bold",
+        fontSize=8,
+        leading=10,
+        textColor=colors.white,
+        alignment=1,
+    )
+
+    story = []
+
+    story.append(Paragraph("Ahorro Programado Jardín 2024-2025", title_style))
+    story.append(
+        Paragraph(
+            f"Reporte generado el {pd.Timestamp.now().strftime('%d/%m/%Y %H:%M')}",
+            cell_style,
+        )
+    )
+    story.append(Spacer(1, 10))
+
+    # 1. CONDICIONES DEL AHORRO
+    story.append(Paragraph("1. Condiciones del Ahorro Programado", h2_style))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0F172A"), spaceBefore=2, spaceAfter=8))
+
+    cond_data = [
+        [Paragraph("<b>Parámetro</b>", header_style), Paragraph("<b>Valor</b>", header_style)]
+    ]
+    for k, v in condiciones.items():
+        cond_data.append([Paragraph(str(k), cell_bold), Paragraph(str(v), cell_style)])
+
+    t_cond = Table(cond_data, colWidths=[200, 340])
+    t_cond.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#107C41")),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#FFE600")),
+        ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#E2EFDA")),
+    ]))
+    story.append(t_cond)
+    story.append(Spacer(1, 12))
+
+    # 2. KPI RESULTADOS
+    story.append(Paragraph("2. KPI Resultados", h2_style))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0F172A"), spaceBefore=2, spaceAfter=8))
+
+    res_data = [
+        [Paragraph("<b>Indicador</b>", header_style), Paragraph("<b>Valor</b>", header_style)]
+    ]
+    for k, v in kpis_resultados.items():
+        res_data.append([Paragraph(str(k), cell_bold), Paragraph(str(v), cell_style)])
+
+    t_res = Table(res_data, colWidths=[250, 290])
+    t_res.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#107C41")),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#F0FDF4")),
+        ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#FFFFFF")),
+    ]))
+    story.append(t_res)
+    story.append(Spacer(1, 12))
+
+    # 3. KPI RENDIMIENTOS
+    story.append(Paragraph("3. KPI Rendimientos", h2_style))
+    story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0F172A"), spaceBefore=2, spaceAfter=8))
+
+    rend_data = [
+        [Paragraph("<b>Indicador</b>", header_style), Paragraph("<b>Valor</b>", header_style)]
+    ]
+    for k, v in kpis_rendimientos.items():
+        rend_data.append([Paragraph(str(k), cell_bold), Paragraph(str(v), cell_style)])
+
+    t_rend = Table(rend_data, colWidths=[250, 290])
+    t_rend.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#107C41")),
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
+        ("TOPPADDING", (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+        ("BACKGROUND", (0, 1), (0, -1), colors.HexColor("#EFF6FF")),
+        ("BACKGROUND", (1, 1), (1, -1), colors.HexColor("#FFFFFF")),
+    ]))
+    story.append(t_rend)
+    story.append(Spacer(1, 12))
+
+    # 4. TABLA RESUMEN DE MOVIMIENTOS
+    if movements:
+        story.append(Paragraph("4. Tabla Resumen de Movimientos", h2_style))
+        story.append(HRFlowable(width="100%", thickness=1, color=colors.HexColor("#0F172A"), spaceBefore=2, spaceAfter=8))
+
+        mov_headers = ["Fecha", "Dep. Mensual", "Dep. Personales", "Saldo Acum.", "Int. Diario", "Incr. Int. Diario", "Int. Mensual"]
+        mov_table_data = [[Paragraph(f"<b>{h}</b>", header_style) for h in mov_headers]]
+
+        for m in movements:
+            dt_str = m['fecha'].strftime('%d/%m/%Y') if hasattr(m['fecha'], 'strftime') else str(m['fecha'])
+            dep_m_str = f"${m['dep_m']:,.2f}" if m['dep_m'] > 0 else "$0.00"
+            dep_p_str = f"${m['dep_p']:,.2f}" if m['dep_p'] > 0 else "$0.00"
+            saldo_str = f"${m['saldo_acum']:,.2f}"
+            int_d_str = f"${m['int_diario']:.2f}"
+            inc_d_str = f"${m['inc_int_d']:.2f}" if m['inc_int_d'] > 0 else "-"
+            int_m_str = f"${m['int_m']:,.2f}" if m['int_m'] is not None else "-"
+
+            row_cells = [
+                Paragraph(dt_str, cell_bold),
+                Paragraph(dep_m_str, cell_style),
+                Paragraph(dep_p_str, cell_style),
+                Paragraph(saldo_str, cell_style),
+                Paragraph(int_d_str, cell_style),
+                Paragraph(inc_d_str, cell_style),
+                Paragraph(int_m_str, cell_style),
+            ]
+            mov_table_data.append(row_cells)
+
+        col_w = 540.0 / len(mov_headers)
+        t_mov = Table(mov_table_data, colWidths=[col_w] * len(mov_headers))
+        t_mov_style = [
+            ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#1F2937")),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#000000")),
+            ("TOPPADDING", (0, 0), (-1, -1), 3),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+        ]
+        for r_idx in range(1, len(mov_table_data)):
+            bg = colors.HexColor("#F9FAFB") if r_idx % 2 == 1 else colors.white
+            t_mov_style.append(("BACKGROUND", (0, r_idx), (-1, r_idx), bg))
+
+        t_mov.setStyle(TableStyle(t_mov_style))
+        story.append(t_mov)
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
 
 wb = cargar_excel_drive(DRIVE_FILE_ID)
 
@@ -111,6 +296,170 @@ if wb is not None:
     val_diaria_str = f"{float(tasa_diaria):.7f}".replace(".", ",") if isinstance(tasa_diaria, (int, float)) else str(tasa_diaria)
     val_aporte_str = f"{float(valor_aporte):,.2f}".replace(".", ",") if isinstance(valor_aporte, (int, float)) else str(valor_aporte)
 
+    condiciones_dict = {
+        "Tasa Nominal Anual": f"{tna_val:.2f}%",
+        "Tasa Diaria": val_diaria_str,
+        "Fecha inicio": fecha_ini_str,
+        "Plazo meses": str(plazo_meses),
+        "Fecha Fin": fecha_fin_str,
+        "Total de Días": str(total_dias),
+        "Valor Aporte Mensual": f"${val_aporte_str}",
+        "Día de Aporte Mensual": str(dia_aporte),
+        "Cantidad de Meses Real": f"{meses_real} Meses / {dias_real} Días"
+    }
+
+    # ==============================================================================
+    # 2. SECCIONES DE KPIS: RESULTADOS Y RENDIMIENTOS
+    # ==============================================================================
+    d2 = sheet["D2"].value   # Total Interés Ganados
+    d3 = sheet["D3"].value   # Total Depósitos Mensuales
+    d4 = sheet["D4"].value   # Total Depósitos Personales
+    d5 = sheet["D5"].value   # Total Depositado sin intereses
+    d6 = sheet["D6"].value   # Total Ganado Incluido Intereses
+
+    b7 = sheet["B7"].value   # TIR (Tasa Interna de Retorno)
+    d7 = sheet["D7"].value   # ROI RENTABILIDAD ACUMULADA
+    d16 = sheet["D16"].value # Saldo Fin mes Promedio Ponderado
+    d19 = sheet["D19"].value # Aportes Personales Promedio
+    b19 = sheet["B19"].value # Interés Diario Promedio
+
+    # CÁLCULOS DE KPIS EXISTENTES
+    tna_dec = tna_num if tna_num <= 1 else tna_num / 100.0
+    tea_calc = ((1.0 + (tna_dec / 12.0)) ** 12.0) - 1.0
+
+    d2_num = float(d2) if isinstance(d2, (int, float)) else 0.0
+    d5_num = float(d5) if isinstance(d5, (int, float)) else 0.0
+    d6_num = float(d6) if isinstance(d6, (int, float)) else 0.0
+    ratio_ganancia_calc = (d2_num / d6_num) if d6_num > 0 else 0.0
+
+    # CÁLCULO DE KPIS ADICIONALES
+    chart_intereses_kpi = []
+    r_kpi = 2
+    while True:
+        f_cobro_k = sheet.cell(row=r_kpi, column=29).value  # Col AC
+        int_m_k = sheet.cell(row=r_kpi, column=33).value     # Col AG
+        if f_cobro_k is None or str(f_cobro_k).strip() == "":
+            break
+        chart_intereses_kpi.append(float(int_m_k) if isinstance(int_m_k, (int, float)) else 0.0)
+        r_kpi += 1
+
+    interes_compuesto_calc = 0.0
+    cum_int_temp = 0.0
+    tna_mensual = tna_dec / 12.0
+    for int_m_val in chart_intereses_kpi:
+        interes_compuesto_calc += cum_int_temp * tna_mensual
+        cum_int_temp += int_m_val
+
+    d7_num = float(d7) if isinstance(d7, (int, float)) else (d2_num / d5_num if d5_num > 0 else 0.0)
+    d7_pct = d7_num * 100.0 if d7_num <= 1.0 else d7_num
+    retorno_100_val = f"${d7_pct:.2f}".replace(".", ",")
+
+    ratio_100_val = f"${ratio_ganancia_calc * 100.0:.2f}".replace(".", ",")
+
+    b19_num = float(b19) if isinstance(b19, (int, float)) else 0.0
+    d16_num = float(d16) if isinstance(d16, (int, float)) else 0.0
+    prod_diaria_1000 = (b19_num / (d16_num / 1000.0)) if d16_num > 0 else (tna_dec / 360.0) * 1000.0
+
+    kpis_resultados_dict = {
+        "Total Interés Ganados": fmt_moneda(d2),
+        "Total Dep. Mensuales": fmt_moneda(d3),
+        "Total Dep. Personales": fmt_moneda(d4),
+        "Total Depositado (sin Int.)": fmt_moneda(d5),
+        "Total Ganado Incluido Intereses": fmt_moneda(d6)
+    }
+
+    kpis_rendimientos_dict = {
+        "TIR (Tasa Int. Retorno)": fmt_porcentaje(b7),
+        "TEA (Tasa Efe. Anual)": fmt_porcentaje(tea_calc),
+        "ROI Rentabilidad Acum.": fmt_porcentaje(d7),
+        "Ratio de Ganancia": fmt_porcentaje(ratio_ganancia_calc),
+        "Interés sobre Interés": fmt_moneda(interes_compuesto_calc),
+        "Retorno por cada $100 (ROI)": retorno_100_val,
+        "Ganancia por $100 del Fondo (Ratio)": ratio_100_val,
+        "Productividad por $1.000": f"{fmt_moneda(prod_diaria_1000)} / día",
+        "Saldo Fin Mes Prom. Pond.": fmt_moneda(d16),
+        "Aportes Personales Prom.": fmt_moneda(d19),
+        "Interés Diario Promedio": fmt_moneda(b19)
+    }
+
+    # ==============================================================================
+    # 3. TABLA RESUMEN DE MOVIMIENTOS DINÁMICA (AZ:BF)
+    # ==============================================================================
+    movements = []
+    r = 3  # Fila de inicio (AZ3:BF3)
+    
+    while True:
+        date_val = sheet.cell(row=r, column=52).value  # Col AZ (Fechas)
+        if date_val is None or str(date_val).strip() == "":
+            break
+
+        dep_m = sheet.cell(row=r, column=53).value or 0     # Col BA
+        dep_p = sheet.cell(row=r, column=54).value or 0     # Col BB
+        saldo_acum = sheet.cell(row=r, column=55).value or 0 # Col BC
+        int_diario = sheet.cell(row=r, column=56).value or 0 # Col BD
+        inc_int_d = sheet.cell(row=r, column=57).value or 0  # Col BE
+        int_m = sheet.cell(row=r, column=58).value          # Col BF
+
+        is_int_m = int_m is not None and isinstance(int_m, (int, float)) and float(int_m) > 0
+        is_dep_p = isinstance(dep_p, (int, float)) and float(dep_p) > 0
+        is_dep_m = isinstance(dep_m, (int, float)) and float(dep_m) > 0
+
+        if is_int_m:
+            row_class = "row-blue"
+            tipo_cat = "🟦 Intereses Ganados"
+        elif is_dep_p:
+            row_class = "row-yellow"
+            tipo_cat = "🟨 Aportes Personales"
+        elif is_dep_m:
+            row_class = "row-pink"
+            tipo_cat = "🟧 Aportes Mensuales"
+        else:
+            row_class = "row-white"
+            tipo_cat = "Otros"
+
+        movements.append({
+            'fecha': date_val,
+            'dep_m': float(dep_m) if isinstance(dep_m, (int, float)) else 0.0,
+            'dep_p': float(dep_p) if isinstance(dep_p, (int, float)) else 0.0,
+            'saldo_acum': float(saldo_acum) if isinstance(saldo_acum, (int, float)) else 0.0,
+            'int_diario': float(int_diario) if isinstance(int_diario, (int, float)) else 0.0,
+            'inc_int_d': float(inc_int_d) if isinstance(inc_int_d, (int, float)) else 0.0,
+            'int_m': float(int_m) if is_int_m else None,
+            'row_class': row_class,
+            'tipo_cat': tipo_cat
+        })
+        r += 1
+
+    # GENERAR PDF CON DATOS COMPLETOS
+    pdf_bytes = generar_pdf(condiciones_dict, kpis_resultados_dict, kpis_rendimientos_dict, movements)
+
+    # ==============================================================================
+    # ENCABEZADO PRINCIPAL Y BOTONES RECARGAR / PDF
+    # ==============================================================================
+    col_title, col_btn_rec, col_btn_pdf = st.columns([3, 1, 1])
+    with col_title:
+        st.title("💰 Ahorro Programado Jardín 2024-2025")
+        st.caption("Sincronizado en tiempo real desde Google Drive")
+
+    with col_btn_rec:
+        if st.button("🔄 Recargar", use_container_width=True):
+            st.cache_data.clear()
+            st.rerun()
+
+    with col_btn_pdf:
+        st.download_button(
+            label="📄 Exportar a PDF",
+            data=pdf_bytes,
+            file_name="Prgramado 24-25.pdf",
+            mime="application/pdf",
+            use_container_width=True,
+        )
+
+    st.divider()
+
+    # ==============================================================================
+    # 1. FICHA TÉCNICA CONDICIONES DEL AHORRO (RENDER HTML)
+    # ==============================================================================
     st.subheader("📋 Condiciones del Ahorro Programado")
 
     html_condiciones = f"""<style>
@@ -227,62 +576,6 @@ if wb is not None:
     st.markdown(html_condiciones, unsafe_allow_html=True)
 
     st.divider()
-
-    # ==============================================================================
-    # 2. SECCIONES DE KPIS: RESULTADOS Y RENDIMIENTOS
-    # ==============================================================================
-    d2 = sheet["D2"].value   # Total Interés Ganados
-    d3 = sheet["D3"].value   # Total Depósitos Mensuales
-    d4 = sheet["D4"].value   # Total Depósitos Personales
-    d5 = sheet["D5"].value   # Total Depositado sin intereses
-    d6 = sheet["D6"].value   # Total Ganado Incluido Intereses
-
-    b7 = sheet["B7"].value   # TIR (Tasa Interna de Retorno)
-    d7 = sheet["D7"].value   # ROI RENTABILIDAD ACUMULADA
-    d16 = sheet["D16"].value # Saldo Fin mes Promedio Ponderado
-    d19 = sheet["D19"].value # Aportes Personales Promedio
-    b19 = sheet["B19"].value # Interés Diario Promedio
-
-    # CÁLCULOS DE KPIS EXISTENTES
-    tna_dec = tna_num if tna_num <= 1 else tna_num / 100.0
-    tea_calc = ((1.0 + (tna_dec / 12.0)) ** 12.0) - 1.0
-
-    d2_num = float(d2) if isinstance(d2, (int, float)) else 0.0
-    d5_num = float(d5) if isinstance(d5, (int, float)) else 0.0
-    d6_num = float(d6) if isinstance(d6, (int, float)) else 0.0
-    ratio_ganancia_calc = (d2_num / d6_num) if d6_num > 0 else 0.0
-
-    # CÁLCULO DE KPIS ADICIONALES
-    # 1. Interés sobre Interés (Ganancia por Interés Compuesto)
-    chart_intereses_kpi = []
-    r_kpi = 2
-    while True:
-        f_cobro_k = sheet.cell(row=r_kpi, column=29).value  # Col AC
-        int_m_k = sheet.cell(row=r_kpi, column=33).value     # Col AG
-        if f_cobro_k is None or str(f_cobro_k).strip() == "":
-            break
-        chart_intereses_kpi.append(float(int_m_k) if isinstance(int_m_k, (int, float)) else 0.0)
-        r_kpi += 1
-
-    interes_compuesto_calc = 0.0
-    cum_int_temp = 0.0
-    tna_mensual = tna_dec / 12.0
-    for int_m_val in chart_intereses_kpi:
-        interes_compuesto_calc += cum_int_temp * tna_mensual
-        cum_int_temp += int_m_val
-
-    # 2. Retorno por cada $100 (ROI)
-    d7_num = float(d7) if isinstance(d7, (int, float)) else (d2_num / d5_num if d5_num > 0 else 0.0)
-    d7_pct = d7_num * 100.0 if d7_num <= 1.0 else d7_num
-    retorno_100_val = f"${d7_pct:.2f}".replace(".", ",")
-
-    # 3. Ganancia por $100 del Fondo (Ratio)
-    ratio_100_val = f"${ratio_ganancia_calc * 100.0:.2f}".replace(".", ",")
-
-    # 4. Productividad por cada $1.000 Depositados
-    b19_num = float(b19) if isinstance(b19, (int, float)) else 0.0
-    d16_num = float(d16) if isinstance(d16, (int, float)) else 0.0
-    prod_diaria_1000 = (b19_num / (d16_num / 1000.0)) if d16_num > 0 else (tna_dec / 360.0) * 1000.0
 
     css_kpis = """<style>
 .kpi-grid {
@@ -434,51 +727,6 @@ if wb is not None:
     # 3. TABLA RESUMEN DE MOVIMIENTOS DINÁMICA (AZ:BF)
     # ==============================================================================
     st.subheader("📑 Tabla Resumen de Movimientos")
-
-    movements = []
-    r = 3  # Fila de inicio (AZ3:BF3)
-    
-    while True:
-        date_val = sheet.cell(row=r, column=52).value  # Col AZ (Fechas)
-        if date_val is None or str(date_val).strip() == "":
-            break
-
-        dep_m = sheet.cell(row=r, column=53).value or 0     # Col BA
-        dep_p = sheet.cell(row=r, column=54).value or 0     # Col BB
-        saldo_acum = sheet.cell(row=r, column=55).value or 0 # Col BC
-        int_diario = sheet.cell(row=r, column=56).value or 0 # Col BD
-        inc_int_d = sheet.cell(row=r, column=57).value or 0  # Col BE
-        int_m = sheet.cell(row=r, column=58).value          # Col BF
-
-        is_int_m = int_m is not None and isinstance(int_m, (int, float)) and float(int_m) > 0
-        is_dep_p = isinstance(dep_p, (int, float)) and float(dep_p) > 0
-        is_dep_m = isinstance(dep_m, (int, float)) and float(dep_m) > 0
-
-        if is_int_m:
-            row_class = "row-blue"
-            tipo_cat = "🟦 Intereses Ganados"
-        elif is_dep_p:
-            row_class = "row-yellow"
-            tipo_cat = "🟨 Aportes Personales"
-        elif is_dep_m:
-            row_class = "row-pink"
-            tipo_cat = "🟧 Aportes Mensuales"
-        else:
-            row_class = "row-white"
-            tipo_cat = "Otros"
-
-        movements.append({
-            'fecha': date_val,
-            'dep_m': float(dep_m) if isinstance(dep_m, (int, float)) else 0.0,
-            'dep_p': float(dep_p) if isinstance(dep_p, (int, float)) else 0.0,
-            'saldo_acum': float(saldo_acum) if isinstance(saldo_acum, (int, float)) else 0.0,
-            'int_diario': float(int_diario) if isinstance(int_diario, (int, float)) else 0.0,
-            'inc_int_d': float(inc_int_d) if isinstance(inc_int_d, (int, float)) else 0.0,
-            'int_m': float(int_m) if is_int_m else None,
-            'row_class': row_class,
-            'tipo_cat': tipo_cat
-        })
-        r += 1
 
     opciones_disponibles = ["🟨 Aportes Personales", "🟧 Aportes Mensuales", "🟦 Intereses Ganados"]
     
